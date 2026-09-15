@@ -1,10 +1,11 @@
 package com.cursortickring;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.geom.Ellipse2D;
+import java.awt.geom.Arc2D;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -15,7 +16,10 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 
 final class CursorTickOverlay extends Overlay
 {
+	private static final double FULL_CIRCLE = 360.0;
+
 	private final Client client;
+	private final CursorTickPlugin plugin;
 	private final CursorTickConfig config;
 
 	@Inject
@@ -23,7 +27,9 @@ final class CursorTickOverlay extends Overlay
 	{
 		super(plugin);
 		this.client = client;
+		this.plugin = plugin;
 		this.config = config;
+
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ALWAYS_ON_TOP);
 		setPriority(PRIORITY_HIGHEST);
@@ -43,13 +49,9 @@ final class CursorTickOverlay extends Overlay
 			return null;
 		}
 
-		int r = config.radius();
-		double d = r * 2.0;
-		Ellipse2D.Double circle = new Ellipse2D.Double(
-			mouse.getX() - r,
-			mouse.getY() - r,
-			d,
-			d);
+		long nowNanos = System.nanoTime();
+		TickClock.State tickState = plugin.getTickState();
+		double progress = tickState.progressAt(nowNanos);
 
 		Graphics2D g = (Graphics2D) graphics.create();
 		try
@@ -61,8 +63,22 @@ final class CursorTickOverlay extends Overlay
 				config.thickness(),
 				BasicStroke.CAP_ROUND,
 				BasicStroke.JOIN_ROUND));
-			g.setColor(config.progressColor());
-			g.draw(circle);
+
+			if (config.showTrack())
+			{
+				drawArc(g, mouse, config.radius(), 90.0, -FULL_CIRCLE, config.trackColor());
+			}
+
+			if (tickState.isStarted())
+			{
+				drawArc(
+					g,
+					mouse,
+					config.radius(),
+					90.0,
+					-FULL_CIRCLE * progress,
+					config.progressColor());
+			}
 		}
 		finally
 		{
@@ -70,5 +86,26 @@ final class CursorTickOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	private static void drawArc(
+		Graphics2D graphics,
+		Point center,
+		int radius,
+		double startAngle,
+		double extent,
+		Color color)
+	{
+		double diameter = radius * 2.0;
+		Arc2D.Double arc = new Arc2D.Double(
+			center.getX() - radius,
+			center.getY() - radius,
+			diameter,
+			diameter,
+			startAngle,
+			extent,
+			Arc2D.OPEN);
+		graphics.setColor(color);
+		graphics.draw(arc);
 	}
 }
