@@ -38,74 +38,144 @@ final class CursorTickOverlay extends Overlay
 	}
 
 	@Override
-	public Dimension render(Graphics2D graphics)
-	{
-		Point mouse = client.getMouseCanvasPosition();
-		if (mouse == null
-			|| mouse.getX() < 0
-			|| mouse.getY() < 0
-			|| client.getGameState() != GameState.LOGGED_IN)
-		{
-			return null;
-		}
+    public Dimension render(Graphics2D graphics)
+    {
+        Point mouse = client.getMouseCanvasPosition();
 
-		long nowNanos = System.nanoTime();
-		TickClock.State tickState = plugin.getTickState();
-		double progress = tickState.progressAt(nowNanos);
+        if (mouse == null
+            || mouse.getX() < 0
+            || mouse.getY() < 0
+            || client.getGameState() != GameState.LOGGED_IN)
+        {
+            return null;
+        }
 
-		Graphics2D g = (Graphics2D) graphics.create();
-		try
-		{
-			g.setRenderingHint(
-				RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON);
-			g.setStroke(new BasicStroke(
-				config.thickness(),
-				BasicStroke.CAP_ROUND,
-				BasicStroke.JOIN_ROUND));
+        long nowNanos = System.nanoTime();
+        TickClock.State tickState = plugin.getTickState();
+        double progress = tickState.progressAt(nowNanos);
 
-			if (config.showTrack())
-			{
-				drawArc(g, mouse, config.radius(), 90.0, -FULL_CIRCLE, config.trackColor());
-			}
+        int centerX = mouse.getX();
+        int centerY = mouse.getY();
 
-			if (tickState.isStarted())
-			{
-				drawArc(
-					g,
-					mouse,
-					config.radius(),
-					90.0,
-					-FULL_CIRCLE * progress,
-					config.progressColor());
-			}
-		}
-		finally
-		{
-			g.dispose();
-		}
+        Graphics2D g = (Graphics2D) graphics.create();
+        try
+        {
+            g.setRenderingHint(
+                RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
 
-		return null;
-	}
+            g.setRenderingHint(
+                RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_PURE);
 
-	private static void drawArc(
-		Graphics2D graphics,
-		Point center,
-		int radius,
-		double startAngle,
-		double extent,
-		Color color)
-	{
-		double diameter = radius * 2.0;
-		Arc2D.Double arc = new Arc2D.Double(
-			center.getX() - radius,
-			center.getY() - radius,
-			diameter,
-			diameter,
-			startAngle,
-			extent,
-			Arc2D.OPEN);
-		graphics.setColor(color);
-		graphics.draw(arc);
-	}
+            g.setStroke(new BasicStroke(
+                config.thickness(),
+                BasicStroke.CAP_ROUND,
+                BasicStroke.JOIN_ROUND));
+
+            drawTickRing(
+                g,
+                centerX,
+                centerY,
+                progress,
+                tickState.isStarted());
+        }
+        finally
+        {
+            g.dispose();
+        }
+
+	return null;
+}
+
+    private void drawTickRing(
+        Graphics2D graphics,
+        int centerX,
+        int centerY,
+        double progress,
+        boolean started)
+    {
+        if (config.showTrack())
+        {
+            drawLogicalRange(
+                graphics,
+                centerX,
+                centerY,
+                config.radius(),
+                0.0,
+                FULL_CIRCLE,
+                config.trackColor());
+        }
+
+        if (!started)
+        {
+            return;
+        }
+
+        double activeStart;
+        double activeLength;
+        switch (config.ringStyle())
+        {
+            case REMAINING:
+                activeStart = progress * FULL_CIRCLE;
+                activeLength = (1.0 - progress) * FULL_CIRCLE;
+                break;
+            case SWEEP:
+                activeLength = config.sweepSize();
+                activeStart = progress * FULL_CIRCLE - activeLength / 2.0;
+                break;
+            case FILL:
+            default:
+                activeStart = 0.0;
+                activeLength = progress * FULL_CIRCLE;
+                break;
+        }
+
+        drawLogicalRange(
+            graphics,
+            centerX,
+            centerY,
+            config.radius(),
+            activeStart,
+            activeLength,
+            config.progressColor());
+    }
+
+    private void drawLogicalRange(
+        Graphics2D graphics,
+        int centerX,
+        int centerY,
+        int radius,
+        double logicalStart,
+        double logicalLength,
+        Color color)
+    {
+        drawArc(graphics, centerX, centerY, radius, logicalStart, logicalLength, color);
+    }
+
+    private void drawArc(
+        Graphics2D graphics,
+        int centerX,
+        int centerY,
+        int radius,
+        double logicalStart,
+        double logicalLength,
+        Color color)
+    {
+        int direction = config.rotationDirection().getArcSign();
+        double javaStartAngle = 90.0 - config.startAngle() + direction * logicalStart;
+        double javaExtent = direction * logicalLength;
+        double diameter = radius * 2.0;
+
+        Arc2D.Double arc = new Arc2D.Double(
+            centerX - radius,
+            centerY - radius,
+            diameter,
+            diameter,
+            javaStartAngle,
+            javaExtent,
+            Arc2D.OPEN);
+        graphics.setColor(color);
+        graphics.draw(arc);
+    }
 }
