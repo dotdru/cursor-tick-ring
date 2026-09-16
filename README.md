@@ -2,6 +2,8 @@
 
 A highly customizable tick ring anchored to the mouse cursor. Heavily inspired by WoW GCD mouse trackers.
 
+![In-game demo](docs/images/demo.gif)
+
 ## Features
 
 - Gametick synced progress circle around the mouse cursor.
