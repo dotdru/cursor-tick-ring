@@ -1,14 +1,14 @@
 package com.cursortickring;
 
-public enum RingStyle
+public enum TickLabelPosition
 {
-	FILL("Fill / progress"),
-	REMAINING("Cooldown / remaining"),
-	SWEEP("Rotating sweep");
+	CENTER("Center"),
+	ABOVE("Above ring"),
+	BELOW("Below ring");
 
 	private final String displayName;
 
-	RingStyle(String displayName)
+	TickLabelPosition(String displayName)
 	{
 		this.displayName = displayName;
 	}

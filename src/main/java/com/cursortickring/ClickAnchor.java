@@ -1,14 +1,13 @@
 package com.cursortickring;
 
-public enum RingStyle
+public enum ClickAnchor
 {
-	FILL("Fill / progress"),
-	REMAINING("Cooldown / remaining"),
-	SWEEP("Rotating sweep");
+	CLICK_LOCATION("Click location"),
+	FOLLOW_CURSOR("Follow cursor");
 
 	private final String displayName;
 
-	RingStyle(String displayName)
+	ClickAnchor(String displayName)
 	{
 		this.displayName = displayName;
 	}

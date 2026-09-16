@@ -1,14 +1,13 @@
 package com.cursortickring;
 
-public enum RingStyle
+public enum VisibilityMode
 {
-	FILL("Fill / progress"),
-	REMAINING("Cooldown / remaining"),
-	SWEEP("Rotating sweep");
+	LOGGED_IN("Logged in only"),
+	ALWAYS("Always");
 
 	private final String displayName;
 
-	RingStyle(String displayName)
+	VisibilityMode(String displayName)
 	{
 		this.displayName = displayName;
 	}

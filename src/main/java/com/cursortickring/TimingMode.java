@@ -1,14 +1,13 @@
 package com.cursortickring;
 
-public enum RingStyle
+public enum TimingMode
 {
-	FILL("Fill / progress"),
-	REMAINING("Cooldown / remaining"),
-	SWEEP("Rotating sweep");
+	FIXED("Fixed duration"),
+	ADAPTIVE("Adaptive smoothing");
 
 	private final String displayName;
 
-	RingStyle(String displayName)
+	TimingMode(String displayName)
 	{
 		this.displayName = displayName;
 	}
