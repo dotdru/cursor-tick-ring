@@ -5,7 +5,7 @@ A highly customizable tick ring anchored to the mouse cursor. Heavily inspired b
 ![](docs/demo.gif)
 
 <p align="center">
-  <img src="docs/demo.gif" width="520">
+  <img src="docs/demo.gif">
 </p>
 
 ## Features
@@ -23,14 +23,14 @@ A highly customizable tick ring anchored to the mouse cursor. Heavily inspired b
 
 ### Ring styles
 <p align="center">
-  <img src="docs/reverse.gif" width="390" alt="Remaining ring style">
-  <img src="docs/sweep.gif" width="390" alt="Sweep ring style">
+  <img src="docs/reverse.gif">
+  <img src="docs/sweep.gif">
 </p>
 
 ### Attack Mode
 
 <p align="center">
-  <img src="docs/attack.gif" width="520">
+  <img src="docs/attack.gif">
 </p>
 
 ## Changelog
