@@ -2,16 +2,16 @@
 
 A highly customizable tick ring anchored to the mouse cursor. Heavily inspired by WoW GCD mouse trackers.
 
-![In-game demo](https://i.imgur.com/JDwp8lE.mp4)
+![](docs/demo.gif)
+
+<p align="center">
+  <img src="docs/demo.gif" width="520">
+</p>
 
 ## Features
 
 - Gametick synced progress circle around the mouse cursor
 - Fill, remaining, and rotating sweep styles
-
-![reverse](https://i.imgur.com/VZ3K2Mq.mp4)
-![sweep](https://i.imgur.com/dbpXo4i.mp4)
-
 - Heavily configurable (size, color, thickness, idle fadeout, smoothness, circle segments)
 - Optional tick labels, tick cycles, click feedback, tick pulse, accented ticks
 - Configurable cursor replacements (dot, crosshair, hidden, system).
@@ -21,7 +21,17 @@ A highly customizable tick ring anchored to the mouse cursor. Heavily inspired b
 
 ![attack timer mode demo](https://i.imgur.com/rkuMAw3.mp4)
 
+### Ring styles
+<p align="center">
+  <img src="docs/reverse.gif" width="390" alt="Remaining ring style">
+  <img src="docs/sweep.gif" width="390" alt="Sweep ring style">
+</p>
 
+### Attack Mode
+
+<p align="center">
+  <img src="docs/attack.gif" width="520">
+</p>
 
 ## Changelog
 - Version 1.0.1 
