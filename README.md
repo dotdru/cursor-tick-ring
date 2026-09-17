@@ -2,8 +2,6 @@
 
 A highly customizable tick ring anchored to the mouse cursor. Heavily inspired by WoW GCD mouse trackers.
 
-![](docs/demo.gif)
-
 <p align="center">
   <img src="docs/demo.gif">
 </p>
@@ -18,8 +16,6 @@ A highly customizable tick ring anchored to the mouse cursor. Heavily inspired b
 - Restart cycle and circle overlay hotkeys.
 - Experimental attack timer mode (off by default)
     - Current limitation: food delay, special attacks, untested weapons
-
-![attack timer mode demo](https://i.imgur.com/rkuMAw3.mp4)
 
 ### Ring styles
 <p align="center">
