@@ -11,12 +11,21 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import net.runelite.api.Client;
+import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameState;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.Player;
+import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.ItemStats;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseAdapter;
 import net.runelite.client.input.MouseManager;
@@ -42,6 +51,9 @@ public class CursorTickPlugin extends Plugin
 	private CursorTickConfig config;
 
 	@Inject
+	private ItemManager itemManager;
+
+	@Inject
 	private ConfigManager configManager;
 
 	@Inject
@@ -58,6 +70,7 @@ public class CursorTickPlugin extends Plugin
 
 	private final TickClock tickClock = new TickClock();
 	private final TickCycle tickCycle = new TickCycle();
+	private final AttackTickCounter attackCounter = new AttackTickCounter();
 	private final ConcurrentLinkedDeque<ClickPulse> clickPulses = new ConcurrentLinkedDeque<>();
 
 	private volatile long lastMouseActivityNanos;
@@ -154,6 +167,7 @@ public class CursorTickPlugin extends Plugin
 		lastMouseActivityNanos = System.nanoTime();
 		tickClock.reset(config.tickDuration());
 		tickCycle.reset();
+		attackCounter.reset();
 		clickPulses.clear();
 
 		mouseManager.registerMouseListener(mouseListener);
@@ -173,6 +187,7 @@ public class CursorTickPlugin extends Plugin
 		mouseManager.unregisterMouseListener(mouseListener);
 
 		clickPulses.clear();
+		attackCounter.reset();
 		tickCycle.reset();
 		tickClock.reset(config.tickDuration());
 		restoreNativeCursor();
@@ -186,6 +201,66 @@ public class CursorTickPlugin extends Plugin
 			config.tickDuration(),
 			config.timingMode(),
 			config.adaptationStrength());
+
+		if (config.attackTimerMode())
+		{
+			observeAttackAnimation();
+			attackCounter.onGameTick();
+		}
+		else
+		{
+			attackCounter.reset();
+		}
+	}
+
+	@Subscribe
+	public void onClientTick(ClientTick event)
+	{
+		if (config.attackTimerMode())
+		{
+			observeAttackAnimation();
+		}
+	}
+
+	private void observeAttackAnimation()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+		{
+			attackCounter.reset();
+			return;
+		}
+
+		Player player = client.getLocalPlayer();
+		if (player == null || player.isDead())
+		{
+			attackCounter.reset();
+			return;
+		}
+
+		if (!attackCounter.observeAnimation(player.getAnimation(), player.getAnimationFrame()))
+		{
+			return;
+		}
+
+		AttackAnimations.Kind kind = AttackAnimations.classify(player.getAnimation());
+		if (kind != AttackAnimations.Kind.NONE)
+		{
+			boolean rapid = client.getVarpValue(VarPlayerID.COM_MODE) == 1;
+			attackCounter.recordAttack(kind.period(getWeaponAttackSpeed(), rapid));
+		}
+	}
+
+	private int getWeaponAttackSpeed()
+	{
+		ItemContainer equipment = client.getItemContainer(InventoryID.WORN);
+		Item weapon = equipment == null ? null : equipment.getItem(EquipmentInventorySlot.WEAPON.getSlotIdx());
+		if (weapon == null || weapon.getId() < 0)
+		{
+			return 0;
+		}
+
+		ItemStats stats = itemManager.getItemStats(weapon.getId());
+		return stats == null || stats.getEquipment() == null ? 0 : stats.getEquipment().getAspeed();
 	}
 
 	@Subscribe
@@ -195,6 +270,7 @@ public class CursorTickPlugin extends Plugin
 		{
 			tickClock.reset(config.tickDuration());
 			tickCycle.reset();
+			attackCounter.reset();
 			clickPulses.clear();
 		}
 
@@ -206,6 +282,10 @@ public class CursorTickPlugin extends Plugin
 	{
 		if (CursorTickConfig.GROUP.equals(event.getGroup()))
 		{
+			if ("attackTimerMode".equals(event.getKey()))
+			{
+				attackCounter.reset();
+			}
 			updateNativeCursor();
 		}
 	}
@@ -213,6 +293,11 @@ public class CursorTickPlugin extends Plugin
 	TickClock.State getTickState()
 	{
 		return tickClock.getState();
+	}
+
+	int getAttackTicksRemaining()
+	{
+		return attackCounter.getRemaining();
 	}
 
 	int getCyclePosition(long tickNumber, int cycleLength)
@@ -288,7 +373,6 @@ public class CursorTickPlugin extends Plugin
 		}
 		catch (NumberFormatException ignored)
 		{
-			// Leave an unrecognized old value untouched instead of guessing.
 		}
 	}
 

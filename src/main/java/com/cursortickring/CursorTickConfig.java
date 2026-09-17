@@ -62,11 +62,23 @@ public interface CursorTickConfig extends Config
 
 	@ConfigSection(
 		name = "Timing",
-		description = "Advanced display timing. GameTick events remain the source of truth; these settings only control interpolation and visual feedback between events",
+		description = "Advanced display timing. These settings only control interpolation and visual feedback",
 		position = 6,
 		closedByDefault = true
 	)
 	String TIMING_SECTION = "timing";
+
+	@ConfigItem(
+		keyName = "attackTimerMode",
+		name = "Attack timer mode (experimental)",
+		description = "Show estimated attack ticks left; replaces normal tick-label controls. Food delay not included",
+		section = GENERAL_SECTION,
+		position = -1
+	)
+	default boolean attackTimerMode()
+	{
+		return false;
+	}
 
 	@ConfigItem(
 		keyName = "visibilityMode",
@@ -487,7 +499,7 @@ public interface CursorTickConfig extends Config
 	@ConfigItem(
 		keyName = "tickResetFade",
 		name = "Fade on tick reset",
-		description = "Keep the completed progress ring briefly and fade it out as the next tick starts",
+		description = "Fade the completed ring after each tick in Fill style. Disabled in Sweep and Remaining styles",
 		section = RING_SECTION,
 		position = 17
 	)
@@ -747,7 +759,30 @@ public interface CursorTickConfig extends Config
 	{
 		return new Color(255, 205, 70, 245);
 	}
+	@ConfigItem(
+		keyName = "attackLastTickAccent",
+		name = "Accent last attack tick",
+		description = "In Attack timer mode, use a different text color when the countdown shows 1 (one tick before the estimated next attack)",
+		section = LABEL_SECTION,
+		position = 10
+	)
+	default boolean attackLastTickAccent()
+	{
+		return false;
+	}
 
+	@Alpha
+	@ConfigItem(
+		keyName = "attackLastTickColor",
+		name = "Last attack tick color",
+		description = "Text color for the highlighted 1 in the attack countdown",
+		section = LABEL_SECTION,
+		position = 11
+	)
+	default Color attackLastTickColor()
+	{
+		return new Color(255, 205, 70, 255);
+	}
 	@ConfigItem(
 		keyName = "showClickPulse",
 		name = "Show click pulse",

@@ -33,7 +33,7 @@ final class CursorTickOverlay extends Overlay
 	private boolean cachedFontBold;
 
 	@Inject
-	private CursorTickOverlay(Client client, CursorTickPlugin plugin, CursorTickConfig config)
+	CursorTickOverlay(Client client, CursorTickPlugin plugin, CursorTickConfig config)
 	{
 		super(plugin);
 		this.client = client;
@@ -158,6 +158,11 @@ final class CursorTickOverlay extends Overlay
 
 	private double calculateIdleVisibility(long nowNanos)
 	{
+		if (config.attackTimerMode() && plugin.getAttackTicksRemaining() > 0)
+		{
+			return 1.0;
+		}
+
 		int delaySeconds = config.idleFadeDelaySeconds();
 		if (delaySeconds <= 0)
 		{
@@ -194,7 +199,7 @@ final class CursorTickOverlay extends Overlay
 				: RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 	}
 
-	private void drawTickRing(
+	void drawTickRing(
 		Graphics2D graphics,
 		int centerX,
 		int centerY,
@@ -302,7 +307,8 @@ final class CursorTickOverlay extends Overlay
 		long nowNanos,
 		double visibility)
 	{
-		if (!config.fadeOnTickReset() || tickState.getTickNumber() <= 1L)
+		if (!config.fadeOnTickReset() || config.ringStyle() != RingStyle.FILL
+			|| tickState.getTickNumber() <= 1L)
 		{
 			return;
 		}
@@ -318,23 +324,6 @@ final class CursorTickOverlay extends Overlay
 		double smoothstep = fraction * fraction * (3.0 - 2.0 * fraction);
 		double fade = (1.0 - smoothstep) * visibility;
 
-		double previousStart;
-		double previousLength;
-		switch (config.ringStyle())
-		{
-			case FILL:
-				previousStart = 0.0;
-				previousLength = FULL_CIRCLE;
-				break;
-			case SWEEP:
-				previousLength = config.sweepSize();
-				previousStart = FULL_CIRCLE - previousLength / 2.0;
-				break;
-			case REMAINING:
-			default:
-				return;
-		}
-
 		int cycleLength = Math.max(1, config.cycleLength());
 		int previousCyclePosition = cyclePosition <= 1
 			? cycleLength
@@ -346,8 +335,8 @@ final class CursorTickOverlay extends Overlay
 			centerX,
 			centerY,
 			radius,
-			previousStart,
-			previousLength,
+			0.0,
+			FULL_CIRCLE,
 			thickness,
 			withAlpha(previousColor, fade));
 	}
@@ -682,12 +671,16 @@ final class CursorTickOverlay extends Overlay
 		boolean started,
 		double visibility)
 	{
-		if (!config.showTickLabel() || !started)
+		if (!started)
 		{
 			return;
 		}
 
 		String label = getTickLabel(tickNumber, cyclePosition);
+		if (label == null)
+		{
+			return;
+		}
 		Font font = getLabelFont();
 		graphics.setFont(font);
 		FontMetrics metrics = graphics.getFontMetrics(font);
@@ -707,7 +700,17 @@ final class CursorTickOverlay extends Overlay
 				break;
 		}
 
-		Color labelColor = withAlpha(config.labelColor(), visibility);
+		Color textColor = config.labelColor();
+
+		if (config.attackTimerMode()
+			&& config.attackLastTickAccent()
+			&& "1".equals(label))
+		{
+			textColor = config.attackLastTickColor();
+		}
+
+		Color labelColor = withAlpha(textColor, visibility);
+		
 		if (config.labelShadow())
 		{
 			graphics.setColor(new Color(0, 0, 0, labelColor.getAlpha()));
@@ -718,8 +721,18 @@ final class CursorTickOverlay extends Overlay
 		graphics.drawString(label, x, y);
 	}
 
-	private String getTickLabel(long tickNumber, int cyclePosition)
+	String getTickLabel(long tickNumber, int cyclePosition)
 	{
+		if (config.attackTimerMode())
+		{
+			int remaining = plugin.getAttackTicksRemaining();
+			return remaining > 0 ? Integer.toString(remaining) : null;
+		}
+		if (!config.showTickLabel())
+		{
+			return null;
+		}
+
 		int cycleLength = Math.max(1, config.cycleLength());
 		switch (config.tickLabelMode())
 		{
