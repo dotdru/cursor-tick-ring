@@ -8,6 +8,8 @@ import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import net.runelite.api.Client;
@@ -25,6 +27,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Keybind;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
@@ -175,6 +178,29 @@ public class CursorTickPlugin extends Plugin
 			}
 		};
 
+	private final HotkeyListener[] cyclePresetHotkeys = {
+		createCyclePresetHotkey(() -> config.cyclePreset1Hotkey(), () -> config.cyclePreset1Length()),
+		createCyclePresetHotkey(() -> config.cyclePreset2Hotkey(), () -> config.cyclePreset2Length()),
+		createCyclePresetHotkey(() -> config.cyclePreset3Hotkey(), () -> config.cyclePreset3Length())
+	};
+
+	private HotkeyListener createCyclePresetHotkey(Supplier<Keybind> keybind, IntSupplier length)
+	{
+		return new HotkeyListener(keybind)
+		{
+			@Override
+			public void hotkeyPressed()
+			{
+				if (running)
+				{
+					tickCycle.restartAt(tickClock.getState().getTickNumber());
+					configManager.setConfiguration(CursorTickConfig.GROUP, "cycleLength",
+						Math.max(1, Math.min(32, length.getAsInt())));
+				}
+			}
+		};
+	}
+
 	@Override
 	protected void startUp()
 	{
@@ -191,6 +217,10 @@ public class CursorTickPlugin extends Plugin
 		mouseManager.registerMouseListener(mouseListener);
 		keyManager.registerKeyListener(restartCycleHotkeyListener);
 		keyManager.registerKeyListener(toggleOverlayHotkeyListener);
+		for (HotkeyListener hotkey : cyclePresetHotkeys)
+		{
+			keyManager.registerKeyListener(hotkey);
+		}
 		overlayManager.add(overlay);
 		updateNativeCursor();
 		updateDesigner();
@@ -204,6 +234,10 @@ public class CursorTickPlugin extends Plugin
 		overlayManager.remove(overlay);
 		keyManager.unregisterKeyListener(toggleOverlayHotkeyListener);
 		keyManager.unregisterKeyListener(restartCycleHotkeyListener);
+		for (HotkeyListener hotkey : cyclePresetHotkeys)
+		{
+			keyManager.unregisterKeyListener(hotkey);
+		}
 		mouseManager.unregisterMouseListener(mouseListener);
 
 		clickPulses.clear();

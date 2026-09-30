@@ -8,7 +8,11 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.HierarchyEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -25,8 +29,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTextField;
 import javax.swing.Timer;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Keybind;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
 import net.runelite.client.ui.components.colorpicker.RuneliteColorPicker;
@@ -67,7 +73,7 @@ final class CursorDesignerPanel extends PluginPanel
 				}
 			}
 		});
-		JComboBox<String> sections = new JComboBox<>(new String[]{"Ring", "Cursor", "Label", "Effects", "Timing"});
+		JComboBox<String> sections = new JComboBox<>(new String[]{"Ring", "Cursor", "Label", "Effects", "Timing", "Advanced"});
 		JPanel header = new JPanel(new BorderLayout(0, 8));
 		header.add(new JLabel("Cursor designer"), BorderLayout.NORTH);
 		header.add(preview, BorderLayout.CENTER);
@@ -150,6 +156,14 @@ final class CursorDesignerPanel extends PluginPanel
 		slider("Tick duration (ms)", "tickDuration", 400, 1000, config::tickDuration);
 		slider("Adaptation strength", "adaptationStrength", 1, 100, config::adaptationStrength);
 		slider("Phase offset (ms)", "phaseOffset", -250, 250, config::phaseOffset);
+
+		section("Advanced");
+		slider("Preset 1 ticks", "cyclePreset1Length", 1, 32, config::cyclePreset1Length);
+		hotkey("Preset 1 hotkey", "cyclePreset1Hotkey", config::cyclePreset1Hotkey);
+		slider("Preset 2 ticks", "cyclePreset2Length", 1, 32, config::cyclePreset2Length);
+		hotkey("Preset 2 hotkey", "cyclePreset2Hotkey", config::cyclePreset2Hotkey);
+		slider("Preset 3 ticks", "cyclePreset3Length", 1, 32, config::cyclePreset3Length);
+		hotkey("Preset 3 hotkey", "cyclePreset3Hotkey", config::cyclePreset3Hotkey);
 		refresh();
 		sections.addActionListener(event ->
 		{
@@ -252,6 +266,54 @@ final class CursorDesignerPanel extends PluginPanel
 		combo.addActionListener(event -> save(key, combo.getSelectedItem()));
 		updates.add(() -> combo.setSelectedItem(value.get()));
 		control(name, combo);
+	}
+
+	private void hotkey(String name, String key, Supplier<Keybind> value)
+	{
+		JTextField field = new JTextField();
+		field.setEditable(false);
+		field.setToolTipText("Click and press a shortcut. Backspace or Delete clears it; Escape cancels.");
+		field.addFocusListener(new FocusAdapter()
+		{
+			@Override
+			public void focusGained(FocusEvent event)
+			{
+				field.setText("Press a shortcut...");
+			}
+
+			@Override
+			public void focusLost(FocusEvent event)
+			{
+				field.setText(value.get().toString());
+			}
+		});
+		field.addKeyListener(new KeyAdapter()
+		{
+			@Override
+			public void keyPressed(KeyEvent event)
+			{
+				event.consume();
+				int code = event.getKeyCode();
+				if (Keybind.getModifierForKeyCode(code) != null)
+				{
+					return;
+				}
+				if (code != KeyEvent.VK_ESCAPE)
+				{
+					save(key, code == KeyEvent.VK_BACK_SPACE || code == KeyEvent.VK_DELETE
+						? Keybind.NOT_SET : new Keybind(event));
+				}
+				field.transferFocus();
+			}
+		});
+		updates.add(() ->
+		{
+			if (!field.hasFocus())
+			{
+				field.setText(value.get().toString());
+			}
+		});
+		control(name, field);
 	}
 
 	private void color(String name, String key, Supplier<Color> value)

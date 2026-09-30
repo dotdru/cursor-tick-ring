@@ -79,6 +79,14 @@ public interface CursorTickConfig extends Config
 	)
 	String TIMING_SECTION = "timing";
 
+	@ConfigSection(
+		name = "Advanced",
+		description = "Manually switch between preset tick cycles with hotkeys",
+		position = 7,
+		closedByDefault = true
+	)
+	String ADVANCED_SECTION = "advanced";
+
 	@ConfigItem(
 		keyName = "attackTimerMode",
 		name = "Attack timer mode (experimental)",
@@ -916,6 +924,81 @@ public interface CursorTickConfig extends Config
 		position = 1
 	)
 	default Keybind toggleOverlayHotkey()
+	{
+		return Keybind.NOT_SET;
+	}
+
+	@Range(min = 1, max = 32)
+	@ConfigItem(
+		keyName = "cyclePreset1Length",
+		name = "Preset 1 ticks",
+		description = "Cycle length selected by the preset 1 hotkey",
+		section = ADVANCED_SECTION,
+		position = 0
+	)
+	default int cyclePreset1Length()
+	{
+		return 4;
+	}
+
+	@ConfigItem(
+		keyName = "cyclePreset1Hotkey",
+		name = "Preset 1 hotkey",
+		description = "Select preset 1 and restart the current cycle at tick 1; leaves the attack countdown unchanged",
+		section = ADVANCED_SECTION,
+		position = 1
+	)
+	default Keybind cyclePreset1Hotkey()
+	{
+		return Keybind.NOT_SET;
+	}
+
+	@Range(min = 1, max = 32)
+	@ConfigItem(
+		keyName = "cyclePreset2Length",
+		name = "Preset 2 ticks",
+		description = "Cycle length selected by the preset 2 hotkey",
+		section = ADVANCED_SECTION,
+		position = 2
+	)
+	default int cyclePreset2Length()
+	{
+		return 5;
+	}
+
+	@ConfigItem(
+		keyName = "cyclePreset2Hotkey",
+		name = "Preset 2 hotkey",
+		description = "Select preset 2 and restart the current cycle at tick 1; leaves the attack countdown unchanged",
+		section = ADVANCED_SECTION,
+		position = 3
+	)
+	default Keybind cyclePreset2Hotkey()
+	{
+		return Keybind.NOT_SET;
+	}
+
+	@Range(min = 1, max = 32)
+	@ConfigItem(
+		keyName = "cyclePreset3Length",
+		name = "Preset 3 ticks",
+		description = "Cycle length selected by the preset 3 hotkey",
+		section = ADVANCED_SECTION,
+		position = 4
+	)
+	default int cyclePreset3Length()
+	{
+		return 7;
+	}
+
+	@ConfigItem(
+		keyName = "cyclePreset3Hotkey",
+		name = "Preset 3 hotkey",
+		description = "Select preset 3 and restart the current cycle at tick 1; leaves the attack countdown unchanged",
+		section = ADVANCED_SECTION,
+		position = 5
+	)
+	default Keybind cyclePreset3Hotkey()
 	{
 		return Keybind.NOT_SET;
 	}
