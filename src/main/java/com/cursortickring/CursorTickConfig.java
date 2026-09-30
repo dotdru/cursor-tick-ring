@@ -14,6 +14,17 @@ public interface CursorTickConfig extends Config
 {
 	String GROUP = "cursor-tick-ring";
 
+	@ConfigItem(
+		keyName = "showDesigner",
+		name = "Sidebar designer",
+		description = "Show a sidebar designer with a live cursor preview",
+		position = -2
+	)
+	default boolean showDesigner()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "General",
 		description = "Visibility, placement, and rendering behavior",
@@ -71,7 +82,7 @@ public interface CursorTickConfig extends Config
 	@ConfigItem(
 		keyName = "attackTimerMode",
 		name = "Attack timer mode (experimental)",
-		description = "Show estimated attack ticks left; replaces normal tick-label controls. Food delay not included",
+		description = "Show estimated attack ticks left, including food delay; replaces normal tick-label controls",
 		section = GENERAL_SECTION,
 		position = -1
 	)
@@ -499,7 +510,7 @@ public interface CursorTickConfig extends Config
 	@ConfigItem(
 		keyName = "tickResetFade",
 		name = "Fade on tick reset",
-		description = "Fade the completed ring after each tick in Fill style. Disabled in Sweep and Remaining styles",
+		description = "Smooth tick resets by fading out Fill rings and fading in Remaining rings",
 		section = RING_SECTION,
 		position = 17
 	)
@@ -512,7 +523,7 @@ public interface CursorTickConfig extends Config
 	@ConfigItem(
 		keyName = "tickResetFadeDuration",
 		name = "Reset fade time (ms)",
-		description = "How long the completed ring takes to fade after a real GameTick resets progress to zero",
+		description = "How long the reset fade takes after each real GameTick",
 		section = RING_SECTION,
 		position = 18
 	)

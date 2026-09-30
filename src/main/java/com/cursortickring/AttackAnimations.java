@@ -95,6 +95,8 @@ final class AttackAnimations
 
 			case AnimationID.SLAYER_MAGICDART_CAST:
 			case AnimationID.ZAROS_VERTICAL_CASTING_PRIORITY:
+			case AnimationID.ZAROS_CASTING_WALKMERGE:
+			case AnimationID.ZAROS_VERTICAL_CASTING_WALKMERGE:
 			case AnimationID.HUMAN_CASTSTRIKE_WALKMERGE:
 			case AnimationID.HUMAN_CASTWAVE_WALKMERGE:
 			case AnimationID.HUMAN_CAST_SURGE_WALKMERGE:

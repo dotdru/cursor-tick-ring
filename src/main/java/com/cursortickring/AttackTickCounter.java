@@ -3,6 +3,7 @@ package com.cursortickring;
 final class AttackTickCounter
 {
 	private int pendingPeriod;
+	private int pendingFoodDelay;
 	private volatile int remaining;
 	private int lastAnimation = -1;
 	private int lastFrame = -1;
@@ -10,8 +11,8 @@ final class AttackTickCounter
 
 	synchronized boolean observeAnimation(int animation, int frame)
 	{
-		boolean restarted = observing && (animation != lastAnimation
-			|| (frame >= 0 && frame < lastFrame));
+		boolean restarted = !observing || animation != lastAnimation
+			|| (frame >= 0 && frame < lastFrame);
 		lastAnimation = animation;
 		lastFrame = frame;
 		observing = true;
@@ -23,7 +24,13 @@ final class AttackTickCounter
 		if (period > 0)
 		{
 			pendingPeriod = period;
+			pendingFoodDelay = 0;
 		}
+	}
+
+	synchronized void recordFood(int delay)
+	{
+		pendingFoodDelay += Math.max(0, delay);
 	}
 
 	synchronized void onGameTick()
@@ -38,6 +45,11 @@ final class AttackTickCounter
 		{
 			remaining = Math.max(0, remaining - 1);
 		}
+		if (remaining > 0)
+		{
+			remaining += pendingFoodDelay;
+		}
+		pendingFoodDelay = 0;
 	}
 
 	int getRemaining()
@@ -48,6 +60,7 @@ final class AttackTickCounter
 	synchronized void reset()
 	{
 		pendingPeriod = 0;
+		pendingFoodDelay = 0;
 		remaining = 0;
 		lastAnimation = -1;
 		lastFrame = -1;

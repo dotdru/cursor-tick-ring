@@ -98,9 +98,7 @@ final class CursorTickOverlay extends Overlay
 					g,
 					centerX,
 					centerY,
-					tickNumber,
-					cyclePosition,
-					tickState.isStarted(),
+					tickState.isStarted() ? getTickLabel(tickNumber, cyclePosition) : null,
 					visibility);
 			}
 
@@ -115,6 +113,37 @@ final class CursorTickOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	void drawPreview(Graphics2D graphics, int x, int y, TickClock.State state, long now, ClickPulse click)
+	{
+		configureRendering(graphics);
+		int centerX = x + config.horizontalOffset();
+		int centerY = y + config.verticalOffset();
+		int cycle = (int) ((state.getTickNumber() - 1) % Math.max(1, config.cycleLength())) + 1;
+		if (click != null && config.showClickPulse())
+		{
+			drawClickPulse(graphics, click, new Point(x, y), now, 1.0);
+		}
+		drawTickRing(graphics, centerX, centerY, state.progressAt(now, config.phaseOffset()),
+			cycle, state, now, 1.0);
+		drawPulseOnTick(graphics, centerX, centerY, now, state, cycle, 1.0);
+		String label = config.attackTimerMode()
+			? Integer.toString(4 - (int) ((state.getTickNumber() - 1) % 4))
+			: getTickLabel(state.getTickNumber(), cycle);
+		drawTickLabel(graphics, centerX, centerY, label, 1.0);
+		drawCursorMarker(graphics, x, y);
+		if (config.cursorMode() == CursorMode.SYSTEM)
+		{
+			java.awt.Polygon arrow = new java.awt.Polygon(
+				new int[]{x, x, x + 4, x + 7, x + 10, x + 7, x + 13},
+				new int[]{y, y + 17, y + 13, y + 20, y + 19, y + 12, y + 12}, 7);
+			graphics.setColor(Color.WHITE);
+			graphics.fill(arrow);
+			graphics.setStroke(new BasicStroke(1));
+			graphics.setColor(Color.BLACK);
+			graphics.draw(arrow);
+		}
 	}
 
 	private boolean shouldRenderRing(Point mousePosition)
@@ -261,6 +290,10 @@ final class CursorTickOverlay extends Overlay
 		}
 
 		Color progressColor = getProgressColor(cyclePosition);
+		if (config.ringStyle() == RingStyle.REMAINING)
+		{
+			visibility *= resetFadeProgress(tickState, nowNanos);
+		}
 		drawOutlinedRange(
 			graphics,
 			centerX,
@@ -313,16 +346,11 @@ final class CursorTickOverlay extends Overlay
 			return;
 		}
 
-		double durationMillis = config.tickResetFadeDuration();
-		double fraction = tickState.ageMillisAt(nowNanos) / durationMillis;
-		if (fraction < 0.0 || fraction >= 1.0)
+		double fade = (1.0 - resetFadeProgress(tickState, nowNanos)) * visibility;
+		if (fade <= 0.0)
 		{
 			return;
 		}
-
-		/* Smoothstep gives the fade a soft start and finish without a blur pass. */
-		double smoothstep = fraction * fraction * (3.0 - 2.0 * fraction);
-		double fade = (1.0 - smoothstep) * visibility;
 
 		int cycleLength = Math.max(1, config.cycleLength());
 		int previousCyclePosition = cyclePosition <= 1
@@ -339,6 +367,17 @@ final class CursorTickOverlay extends Overlay
 			FULL_CIRCLE,
 			thickness,
 			withAlpha(previousColor, fade));
+	}
+
+	private double resetFadeProgress(TickClock.State tickState, long nowNanos)
+	{
+		if (!config.fadeOnTickReset() || tickState.getTickNumber() <= 1L)
+		{
+			return 1.0;
+		}
+		double fraction = clamp(tickState.ageMillisAt(nowNanos)
+			/ Math.max(1, config.tickResetFadeDuration()), 0.0, 1.0);
+		return fraction * fraction * (3.0 - 2.0 * fraction);
 	}
 
 	private void drawOutlinedRange(
@@ -516,33 +555,40 @@ final class CursorTickOverlay extends Overlay
 				continue;
 			}
 
-			if (ageNanos < 0.0)
-			{
-				continue;
-			}
-
-			double fraction = clamp(ageNanos / durationNanos, 0.0, 1.0);
-			double eased = 1.0 - Math.pow(1.0 - fraction, 3.0);
-			int radius = config.radius() + (int) Math.round(config.clickPulseExpansion() * eased);
-			int x = config.clickAnchor() == ClickAnchor.FOLLOW_CURSOR
-				? currentMouse.getX()
-				: clickPulse.getX();
-			int y = config.clickAnchor() == ClickAnchor.FOLLOW_CURSOR
-				? currentMouse.getY()
-				: clickPulse.getY();
-			x += config.horizontalOffset();
-			y += config.verticalOffset();
-
-			double fade = Math.pow(1.0 - fraction, 2.0) * visibility;
-			Color color = withAlpha(getClickColor(clickPulse.getButton()), fade);
-			drawCircleWithOutline(
-				graphics,
-				x,
-				y,
-				radius,
-				config.clickPulseThickness(),
-				color);
+			drawClickPulse(graphics, clickPulse, currentMouse, nowNanos, visibility);
 		}
+	}
+
+	private void drawClickPulse(Graphics2D graphics, ClickPulse clickPulse, Point currentMouse,
+		long nowNanos, double visibility)
+	{
+		double fraction = (nowNanos - clickPulse.getStartedAtNanos())
+			/ (config.clickPulseDuration() * NANOS_PER_MILLISECOND);
+		if (fraction < 0.0 || fraction >= 1.0)
+		{
+			return;
+		}
+
+		double eased = 1.0 - Math.pow(1.0 - fraction, 3.0);
+		int radius = config.radius() + (int) Math.round(config.clickPulseExpansion() * eased);
+		int x = config.clickAnchor() == ClickAnchor.FOLLOW_CURSOR
+			? currentMouse.getX()
+			: clickPulse.getX();
+		int y = config.clickAnchor() == ClickAnchor.FOLLOW_CURSOR
+			? currentMouse.getY()
+			: clickPulse.getY();
+		x += config.horizontalOffset();
+		y += config.verticalOffset();
+
+		double fade = Math.pow(1.0 - fraction, 2.0) * visibility;
+		Color color = withAlpha(getClickColor(clickPulse.getButton()), fade);
+		drawCircleWithOutline(
+			graphics,
+			x,
+			y,
+			radius,
+			config.clickPulseThickness(),
+			color);
 	}
 
 	private Color getClickColor(int button)
@@ -666,17 +712,9 @@ final class CursorTickOverlay extends Overlay
 		Graphics2D graphics,
 		int centerX,
 		int centerY,
-		long tickNumber,
-		int cyclePosition,
-		boolean started,
+		String label,
 		double visibility)
 	{
-		if (!started)
-		{
-			return;
-		}
-
-		String label = getTickLabel(tickNumber, cyclePosition);
 		if (label == null)
 		{
 			return;

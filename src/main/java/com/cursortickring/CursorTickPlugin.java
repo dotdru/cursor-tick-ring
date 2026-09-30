@@ -19,6 +19,9 @@ import net.runelite.api.Player;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.config.ConfigManager;
@@ -31,6 +34,9 @@ import net.runelite.client.input.MouseAdapter;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.HotkeyListener;
 
@@ -68,13 +74,23 @@ public class CursorTickPlugin extends Plugin
 	@Inject
 	private KeyManager keyManager;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	@Inject
+	private ColorPickerManager colorPickerManager;
+
 	private final TickClock tickClock = new TickClock();
 	private final TickCycle tickCycle = new TickCycle();
 	private final AttackTickCounter attackCounter = new AttackTickCounter();
+	private final FoodDelayTracker foodTracker = new FoodDelayTracker();
 	private final ConcurrentLinkedDeque<ClickPulse> clickPulses = new ConcurrentLinkedDeque<>();
 
 	private volatile long lastMouseActivityNanos;
 	private volatile boolean overlayEnabled = true;
+	private volatile boolean running;
+	private CursorDesignerPanel designer;
+	private NavigationButton designerButton;
 
 	/*
 	 * These fields are only read or changed on Swing's event-dispatch thread.
@@ -162,12 +178,14 @@ public class CursorTickPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		running = true;
 		migrateSettings();
 		overlayEnabled = true;
 		lastMouseActivityNanos = System.nanoTime();
 		tickClock.reset(config.tickDuration());
 		tickCycle.reset();
 		attackCounter.reset();
+		foodTracker.reset();
 		clickPulses.clear();
 
 		mouseManager.registerMouseListener(mouseListener);
@@ -175,11 +193,13 @@ public class CursorTickPlugin extends Plugin
 		keyManager.registerKeyListener(toggleOverlayHotkeyListener);
 		overlayManager.add(overlay);
 		updateNativeCursor();
+		updateDesigner();
 	}
 
 	@Override
 	protected void shutDown()
 	{
+		running = false;
 		overlayEnabled = false;
 		overlayManager.remove(overlay);
 		keyManager.unregisterKeyListener(toggleOverlayHotkeyListener);
@@ -188,9 +208,11 @@ public class CursorTickPlugin extends Plugin
 
 		clickPulses.clear();
 		attackCounter.reset();
+		foodTracker.reset();
 		tickCycle.reset();
 		tickClock.reset(config.tickDuration());
 		restoreNativeCursor();
+		updateDesigner();
 	}
 
 	@Subscribe
@@ -206,10 +228,38 @@ public class CursorTickPlugin extends Plugin
 		{
 			observeAttackAnimation();
 			attackCounter.onGameTick();
+			foodTracker.expire(client.getTickCount());
 		}
 		else
 		{
 			attackCounter.reset();
+			foodTracker.reset();
+		}
+	}
+
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		if (!config.attackTimerMode() || event.isConsumed()
+			|| event.getParam1() != InterfaceID.Inventory.ITEMS || !event.isItemOp())
+		{
+			return;
+		}
+		ItemContainer inventory = client.getItemContainer(InventoryID.INV);
+		if (inventory != null)
+		{
+			foodTracker.clicked(event.getItemId(), event.getMenuOption(),
+				inventory.getItems(), client.getTickCount());
+		}
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (config.attackTimerMode() && event.getContainerId() == InventoryID.INV)
+		{
+			attackCounter.recordFood(foodTracker.consumed(
+				event.getItemContainer().getItems(), client.getTickCount()));
 		}
 	}
 
@@ -234,6 +284,7 @@ public class CursorTickPlugin extends Plugin
 		if (player == null || player.isDead())
 		{
 			attackCounter.reset();
+			foodTracker.reset();
 			return;
 		}
 
@@ -271,6 +322,7 @@ public class CursorTickPlugin extends Plugin
 			tickClock.reset(config.tickDuration());
 			tickCycle.reset();
 			attackCounter.reset();
+			foodTracker.reset();
 			clickPulses.clear();
 		}
 
@@ -285,9 +337,40 @@ public class CursorTickPlugin extends Plugin
 			if ("attackTimerMode".equals(event.getKey()))
 			{
 				attackCounter.reset();
+				foodTracker.reset();
 			}
 			updateNativeCursor();
+			updateDesigner();
 		}
+	}
+
+	private void updateDesigner()
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			if (running && config.showDesigner())
+			{
+				if (designer == null)
+				{
+					designer = new CursorDesignerPanel(this, config, configManager, colorPickerManager);
+					designerButton = NavigationButton.builder()
+						.tooltip("Cursor designer")
+						.icon(CursorDesignerPanel.createIcon())
+						.panel(designer)
+						.priority(8)
+						.build();
+					clientToolbar.addNavigation(designerButton);
+				}
+				designer.refresh();
+			}
+			else if (designer != null)
+			{
+				designer.dispose();
+				clientToolbar.removeNavigation(designerButton);
+				designer = null;
+				designerButton = null;
+			}
+		});
 	}
 
 	TickClock.State getTickState()
