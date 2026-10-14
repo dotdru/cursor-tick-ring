@@ -14,8 +14,24 @@ final class AttackAnimations
 		{
 			case AnimationID.HUMAN_EYE_OF_AYAK_NORMAL:
 			case AnimationID.HUMAN_ATTACK_SALAMANDER:
+			case AnimationID.POG_WARPED_SCEPTRE_ATTACK:
+			case AnimationID.TOA_SOT_CAST_B:
+			case AnimationID.HUMAN_SPECIAL_ACCURSED:
+			case AnimationID.NIGHTMARE_STAFF_SPECIAL:
 				return Kind.WEAPON_RATE;
 
+			// Normal attacks with distinct weapon or cosmetic animations.
+			case AnimationID.DH_SWORD_UPDATE_BLOCK:
+			case AnimationID.GODWARS_GODSWORD_ZAMORAK_PLAYER:
+			case AnimationID.DRAGON_PICKAXE_ANIM:
+			case AnimationID.HUMAN_DINHS_BULWARK_BASH:
+			case AnimationID.ANCIENT_AXE_SLASH:
+			case AnimationID.ANCIENT_AXE_CRUSH:
+			case AnimationID.FORESTRY_2H_AXE_ATTACK:
+			case AnimationID.HUMAN_TROPHY_LEAGUE03_ATTACK:
+			case AnimationID.HUMAN_BANNER_LEAGUE03_ATTACK:
+			case AnimationID.OSB5_HUMAN_5_SLASH:
+			case AnimationID.OSB5_HUMAN_RS_SLASH:
 			case AnimationID.HUMAN_HALLOWFELL_CHOP:
 			case AnimationID.HUMAN_HALLOWFELL_SMASH:
 			case AnimationID.HUMAN_HALLOWFELL_SLASH:
@@ -72,6 +88,57 @@ final class AttackAnimations
 			case AnimationID.HUMAN_XMAS25_CHRISTMAS_DINNER_ATTACK:
 				return Kind.MELEE;
 
+			// These special attacks retain the equipped weapon's normal cooldown.
+			// Instant attacks and specials with their own timing need separate handling.
+			case AnimationID.CLEAVE:
+			case AnimationID.SHATTER:
+			case AnimationID.PUNCTURE:
+			case AnimationID.DAGGERHELD_PUNCTURE:
+			case AnimationID.IMPALE:
+			case AnimationID.DRAGON_WARHAMMER_SA_PLAYER:
+			case AnimationID.ABYSSAL_BLUDGEON_SPECIAL_ATTACK:
+			case AnimationID.ABYSSAL_DAGGER_SPECIAL:
+			case AnimationID.BRAIN_PLAYER_ANCHOR_SPECIAL_ATTACK:
+			case AnimationID.OLAF2_BRINE_SABRE_SPECIAL:
+			case AnimationID.HUMAN_DRAGON_CLAWS_SPEC:
+			case AnimationID.HUMAN_DRAGON_SWORD_SPEC:
+			case AnimationID.HUMAN_ELDER_MAUL_SPEC:
+			case AnimationID.ZGS_SPECIAL_PLAYER:
+			case AnimationID.ZGS_SPECIAL_ORNATE_PLAYER:
+			case AnimationID.SGS_SPECIAL_PLAYER:
+			case AnimationID.SGS_SPECIAL_ORNATE_PLAYER:
+			case AnimationID.BGS_SPECIAL_PLAYER:
+			case AnimationID.BGS_SPECIAL_ORNATE_PLAYER:
+			case AnimationID.AGS_SPECIAL_PLAYER:
+			case AnimationID.AGS_SPECIAL_ORNATE_PLAYER:
+			case AnimationID.AGS_SPECIAL_BLIGHTED_PLAYER:
+			case AnimationID.NGS_SPECIAL_PLAYER:
+			case AnimationID.DRAGON_HALBERD_SPECIAL_ATTACK:
+			case AnimationID.ANCIENT_AXE_SPECIAL:
+			case AnimationID.HUMAN_SPECIAL02_URSINE:
+			case AnimationID.SLICE_PLAYER_MACE_SPECIAL_ATTACK:
+			case AnimationID.SP_ATTACK_DRAGON_SCIMITAR:
+			case AnimationID.DRAGON_TWO_HANDED_SWORD:
+			case AnimationID.DARK_SPEC_PLAYER:
+			case AnimationID.SARADOMIN_SWORD_SPECIAL_PLAYER:
+			case AnimationID.BLESSED_SARADOMIN_SWORD_SPECIAL_PLAYER:
+			case AnimationID.HUMAN_WEAPON_EMBERLIGHT_01_SPEC:
+			case AnimationID.HUMAN_WEAPON_BURNING_CLAWS_02_SPEC:
+			case AnimationID.HUMAN_SPECIAL_VOIDWAKER:
+			case AnimationID.HUMAN_SPECIAL02_VOIDWAKER:
+				return Kind.MELEE;
+
+			// Includes replacement animations: use the equipped weapon's speed,
+			// not the speed of the weapon whose animation is being displayed.
+			case AnimationID.ZCB_ATTACK:
+			case AnimationID.ZCB_ATTACK_PVN:
+			case AnimationID.HUMAN_XBOWS_LEAGUE03_ATTACK:
+			case AnimationID.HUMAN_XBOWS_LEAGUE03_ATTACK_PVN:
+			case AnimationID.HUMAN_STAKE2:
+			case AnimationID.HUMAN_STAKE2_PVN:
+			case AnimationID.HUMAN_DRAGON_KNIFE:
+			case AnimationID.HUMAN_DRAGON_KNIFE_P:
+			case AnimationID.DRYGORE_BLOWPIPE_ATTACK:
 			case AnimationID.XBOWS_HUMAN_FIRE_AND_RELOAD:
 			case AnimationID.XBOWS_HUMAN_FIRE_AND_RELOAD_PVN:
 			case AnimationID.XBOWS_HUMAN_FIRE_AND_RELOAD_NO_STALL:

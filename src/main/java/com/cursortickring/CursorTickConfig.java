@@ -90,7 +90,7 @@ public interface CursorTickConfig extends Config
 	@ConfigItem(
 		keyName = "attackTimerMode",
 		name = "Attack timer mode (experimental)",
-		description = "Show estimated attack ticks left, including food delay; replaces normal tick-label controls",
+		description = "Show estimated attack ticks left, including food delay; sync the ring cycle to attacks and replace normal tick-label controls",
 		section = GENERAL_SECTION,
 		position = -1
 	)
@@ -683,7 +683,7 @@ public interface CursorTickConfig extends Config
 	@ConfigItem(
 		keyName = "cycleLength",
 		name = "Cycle length",
-		description = "Number of ticks shared by the label, cycle-start accent, selected pulse tick, and restart-cycle hotkey",
+		description = "Number of ticks shared by the label, cycle-start accent, selected pulse tick, and restart-cycle hotkey; used when no attack countdown is active",
 		section = LABEL_SECTION,
 		position = 2
 	)

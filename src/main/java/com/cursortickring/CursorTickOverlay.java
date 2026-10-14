@@ -22,6 +22,7 @@ final class CursorTickOverlay extends Overlay
 	private static final double FULL_CIRCLE = 360.0;
 	private static final double NANOS_PER_MILLISECOND = 1_000_000.0;
 	private static final double NANOS_PER_SECOND = 1_000_000_000.0;
+	private static final int PREVIEW_ATTACK_PERIOD = 4;
 
 	private final Client client;
 	private final CursorTickPlugin plugin;
@@ -90,6 +91,7 @@ final class CursorTickOverlay extends Overlay
 					centerY,
 					progress,
 					cyclePosition,
+					plugin.getPreviousCyclePosition(tickNumber, config.cycleLength()),
 					tickState,
 					nowNanos,
 					visibility);
@@ -120,17 +122,30 @@ final class CursorTickOverlay extends Overlay
 		configureRendering(graphics);
 		int centerX = x + config.horizontalOffset();
 		int centerY = y + config.verticalOffset();
-		int cycle = (int) ((state.getTickNumber() - 1) % Math.max(1, config.cycleLength())) + 1;
+		int cycleLength = config.attackTimerMode() ? PREVIEW_ATTACK_PERIOD : Math.max(1, config.cycleLength());
+		int cycle = (int) Math.floorMod(state.getTickNumber() - 1, cycleLength) + 1;
+		int previousCycle = cycle == 1 ? cycleLength : cycle - 1;
+		String label;
+		if (config.attackTimerMode() && plugin.getAttackTicksRemaining() > 0)
+		{
+			state = plugin.getTickState();
+			cycle = plugin.getCyclePosition(state.getTickNumber(), config.cycleLength());
+			previousCycle = plugin.getPreviousCyclePosition(state.getTickNumber(), config.cycleLength());
+			label = getTickLabel(state.getTickNumber(), cycle);
+		}
+		else
+		{
+			label = config.attackTimerMode()
+				? Integer.toString(cycleLength - cycle + 1)
+				: getTickLabel(state.getTickNumber(), cycle);
+		}
 		if (click != null && config.showClickPulse())
 		{
 			drawClickPulse(graphics, click, new Point(x, y), now, 1.0);
 		}
 		drawTickRing(graphics, centerX, centerY, state.progressAt(now, config.phaseOffset()),
-			cycle, state, now, 1.0);
+			cycle, previousCycle, state, now, 1.0);
 		drawPulseOnTick(graphics, centerX, centerY, now, state, cycle, 1.0);
-		String label = config.attackTimerMode()
-			? Integer.toString(4 - (int) ((state.getTickNumber() - 1) % 4))
-			: getTickLabel(state.getTickNumber(), cycle);
 		drawTickLabel(graphics, centerX, centerY, label, 1.0);
 		drawCursorMarker(graphics, x, y);
 		if (config.cursorMode() == CursorMode.SYSTEM)
@@ -234,6 +249,7 @@ final class CursorTickOverlay extends Overlay
 		int centerY,
 		double progress,
 		int cyclePosition,
+		int previousCyclePosition,
 		TickClock.State tickState,
 		long nowNanos,
 		double visibility)
@@ -265,7 +281,7 @@ final class CursorTickOverlay extends Overlay
 			centerY,
 			radius,
 			thickness,
-			cyclePosition,
+			previousCyclePosition,
 			tickState,
 			nowNanos,
 			visibility);
@@ -335,7 +351,7 @@ final class CursorTickOverlay extends Overlay
 		int centerY,
 		int radius,
 		float thickness,
-		int cyclePosition,
+		int previousCyclePosition,
 		TickClock.State tickState,
 		long nowNanos,
 		double visibility)
@@ -352,10 +368,6 @@ final class CursorTickOverlay extends Overlay
 			return;
 		}
 
-		int cycleLength = Math.max(1, config.cycleLength());
-		int previousCyclePosition = cyclePosition <= 1
-			? cycleLength
-			: cyclePosition - 1;
 		Color previousColor = getProgressColor(previousCyclePosition);
 
 		drawOutlinedRange(

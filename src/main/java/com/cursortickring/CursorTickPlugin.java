@@ -419,7 +419,22 @@ public class CursorTickPlugin extends Plugin
 
 	int getCyclePosition(long tickNumber, int cycleLength)
 	{
+		int attackPosition = config.attackTimerMode() ? attackCounter.getCyclePosition() : 0;
+		if (attackPosition > 0)
+		{
+			return attackPosition;
+		}
 		return tickCycle.positionAt(tickNumber, cycleLength);
+	}
+
+	int getPreviousCyclePosition(long tickNumber, int cycleLength)
+	{
+		int attackPosition = config.attackTimerMode() ? attackCounter.getPreviousCyclePosition() : 0;
+		if (attackPosition > 0)
+		{
+			return attackPosition;
+		}
+		return tickCycle.positionAt(tickNumber - 1, cycleLength);
 	}
 
 	Iterable<ClickPulse> getClickPulses()

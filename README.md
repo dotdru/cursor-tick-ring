@@ -2,9 +2,7 @@
 
 A highly customizable tick ring anchored to the mouse cursor. Heavily inspired by WoW GCD mouse trackers.
 
-<p align="center">
-  <img src="docs/demo.gif">
-</p>
+![](docs/cursor-features.png)
 
 ## Features
 
@@ -17,22 +15,17 @@ A highly customizable tick ring anchored to the mouse cursor. Heavily inspired b
 - Restart cycle and circle overlay hotkeys.
 - Tick cycle presets (hotkeyable)
 - Experimental attack timer mode (off by default)
-    - Current limitations: special attacks and untested weapons
-
-
-### Ring styles
-<p align="center">
-  <img src="docs/reverse.gif">
-  <img src="docs/sweep.gif">
-</p>
+    - Supports recognized attack animations, including Zaryte crossbow animation replacements, using the equipped weapon's speed.
+    - Current limitations: unrecognized or cross-style animation replacements, some special attacks, and effects that change attack speed.
 
 ### Attack Mode
 
-<p align="center">
-  <img src="docs/attack.gif">
-</p>
+![Four-tick attack countdown](docs/attack-timer.png)
 
 ## Changelog
+- Version 1.0.3
+    - Synced ring accents with the attack timer 
+    - Added missing attack animations
 - Version 1.0.2
     - Added a sidebar designer with a live cursor preview.
     - Added smooth reset fading to the remaining/reverse style.

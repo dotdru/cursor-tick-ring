@@ -10,6 +10,68 @@ import static org.junit.Assert.assertTrue;
 public class AttackTickCounterTest
 {
 	@Test
+	public void cycleStartsOnEachAttackAndExpiresWithTheCountdown()
+	{
+		AttackTickCounter counter = new AttackTickCounter();
+		assertEquals(0, counter.getCyclePosition());
+		counter.recordAttack(4);
+		assertEquals(0, counter.getCyclePosition());
+		counter.onGameTick();
+		for (int position = 1; position <= 4; position++)
+		{
+			assertEquals(position, counter.getCyclePosition());
+			assertEquals(5 - position, counter.getRemaining());
+			assertEquals(position - 1, counter.getPreviousCyclePosition());
+			counter.onGameTick();
+		}
+		assertEquals(0, counter.getCyclePosition());
+		assertEquals(4, counter.getPreviousCyclePosition());
+		counter.onGameTick();
+		assertEquals(0, counter.getPreviousCyclePosition());
+	}
+
+	@Test
+	public void foodExtendsTheCycleWithoutRepeatingTheAttackAccent()
+	{
+		AttackTickCounter counter = new AttackTickCounter();
+		counter.recordAttack(4);
+		counter.onGameTick();
+		counter.recordFood(3);
+		for (int position = 2; position <= 7; position++)
+		{
+			counter.onGameTick();
+			assertEquals(position, counter.getCyclePosition());
+			assertEquals(8 - position, counter.getRemaining());
+		}
+		counter.onGameTick();
+		assertEquals(0, counter.getCyclePosition());
+	}
+
+	@Test
+	public void newWeaponAttackRestartsAnExtendedCycleAndPreservesItsFadePosition()
+	{
+		AttackTickCounter counter = new AttackTickCounter();
+		counter.recordAttack(4);
+		counter.onGameTick();
+		counter.recordFood(3);
+		counter.onGameTick();
+		counter.recordAttack(5);
+		counter.onGameTick();
+		assertEquals(1, counter.getCyclePosition());
+		assertEquals(5, counter.getRemaining());
+		assertEquals(2, counter.getPreviousCyclePosition());
+		counter.onGameTick();
+		assertEquals(2, counter.getCyclePosition());
+		assertEquals(4, counter.getRemaining());
+		assertEquals(1, counter.getPreviousCyclePosition());
+		counter.reset();
+		assertEquals(0, counter.getCyclePosition());
+		assertEquals(0, counter.getPreviousCyclePosition());
+		counter.onGameTick();
+		assertEquals(0, counter.getCyclePosition());
+	}
+
+	@Test
 	public void addsComboFoodDelayToTheCurrentCooldown()
 	{
 		AttackTickCounter counter = new AttackTickCounter();
